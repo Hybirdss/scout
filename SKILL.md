@@ -67,26 +67,38 @@ you're building. Run `/gstack` (office-hours) first? Reference research is
 
 ---
 
-## Phase 1: Scope
+## Phase 1: Scope + Depth
 
-**STOP.** Ask the user before proceeding. Do NOT auto-select.
+**STOP.** Ask the user TWO questions before proceeding. Do NOT auto-select.
 
-AskUserQuestion:
+AskUserQuestion (두 질문을 한 번에):
 
-> I need to know what to scout for. The main deliverable is a **Steal List** —
-> concrete patterns worth adopting, with evidence.
+**Q1: What to scout?**
+> The main deliverable is a **Steal List** — concrete patterns worth adopting, with evidence.
 
-- A) UI/UX references — how the best products in this space look, feel, and flow. Screenshots, layout patterns, interaction models. Best before design work.
-- B) Code references — how others actually built this. GitHub repos, architecture patterns, data models, edge cases. Best before implementation.
+- A) UI/UX references — how the best products in this space look, feel, and flow.
+- B) Code references — how others actually built this. GitHub repos, architecture.
 - C) Both — UI/UX + Code. Full picture. (Recommended for new products)
 - D) Targeted — I have specific questions (describe what you want)
 
-RECOMMENDATION: Choose C when starting a new product. Choose A or B for a specific feature.
+**Q2: How deep?**
+> Research depth scales with project ambition. Deeper = more time, better Steal List.
+
+- Quick (15 min) — Top 3 references, skim-level. Good for small features or familiar territory.
+- Standard (30 min) — Top 5 references, code deep-read on top 3. Good for most projects.
+- Deep (1 hr+) — 8-10 references, full code analysis, cross-repo comparison matrix. For new products or unfamiliar domains.
+
+RECOMMENDATION: C + Standard for most projects. Quick for features you've built before. Deep for new product launches.
 
 **STOP.** Wait for the user's response before continuing.
 
 If D: use the user's description. Skip the structured phases and do a focused
 research pass on their specific questions.
+
+**Depth controls:**
+- Quick: WebSearch only, top 3 results, skip browse screenshots, 1-layer synthesis
+- Standard: WebSearch + gh search, top 5, browse if available, 3-layer synthesis
+- Deep: WebSearch + gh search + context7, top 8-10, browse + deep-read top 3 repos, 3-layer synthesis + Eureka hunt (minimum 2 Layer 3 insights required)
 
 ---
 
@@ -94,9 +106,23 @@ research pass on their specific questions.
 
 **The type of thing you're building determines where to look and what to extract.**
 
-Identify the build type from context (or ask if unclear), then apply the matching
-research strategy. Each type has different reference sources, analysis dimensions,
-and steal targets.
+Auto-detect the build type from project files:
+
+```bash
+# Auto-detect build type from filesystem markers
+[ -f next.config.* ] || [ -f nuxt.config.* ] || [ -f vite.config.* ] && echo "TYPE: SaaS/WebApp"
+[ -f Cargo.toml ] || [ -f setup.py ] || [ -f pyproject.toml ] && echo "TYPE: Library/CLI"
+[ -f SKILL.md ] || [ -d agents/ ] && echo "TYPE: AI agent/Skill"
+[ -f manifest.json ] && grep -q "manifest_version" manifest.json 2>/dev/null && echo "TYPE: Browser extension"
+[ -f app.json ] || [ -f expo.json ] && echo "TYPE: Mobile app"
+[ -f conf.lua ] || [ -f main.lua ] && echo "TYPE: Game"
+ls *.mcp.* mcp_config.json 2>/dev/null && echo "TYPE: MCP server"
+```
+
+If auto-detect finds a type, confirm with user: "This looks like a [type]. Correct?"
+If nothing detected or ambiguous, ask the user.
+
+Apply the matching research strategy:
 
 | Build type | Where to find references | What to analyze |
 |------------|------------------------|-----------------|
@@ -140,16 +166,18 @@ Don't only search for direct competitors. Search for products that solve
 
 ### Step 2: Visual analysis
 
-Check if the gstack browse binary is available:
+*Skip if depth is Quick.*
+
+Check if the gstack browse binary (`$B`) is available:
 
 ```bash
 B=""
 [ -x ~/.claude/skills/gstack/browse/dist/browse ] && B=~/.claude/skills/gstack/browse/dist/browse
-[ -x "$(git rev-parse --show-toplevel 2>/dev/null)/.claude/skills/gstack/browse/dist/browse" ] && B="$(git rev-parse --show-toplevel)/.claude/skills/gstack/browse/dist/browse"
+[ -x "$(git rev-parse --show-toplevel >/dev/null 2>&1 && pwd)/.claude/skills/gstack/browse/dist/browse" ] && B="$(git rev-parse --show-toplevel)/.claude/skills/gstack/browse/dist/browse"
 [ -n "$B" ] && echo "BROWSE: $B" || echo "NO_BROWSE"
 ```
 
-**If browse is available:** visit the top 3-5 products. For each:
+**If `$B` is available (gstack browse):** visit the top 3-5 products. For each:
 
 ```bash
 $B goto "https://example.com"
@@ -159,8 +187,11 @@ $B snapshot
 
 Read each screenshot to analyze the visual design. The snapshot gives structural data.
 
-**If browse is not available:** use WebSearch for "[product name] UI screenshot"
+**If `$B` is not available:** use WebSearch for "[product name] UI screenshot"
 or "[product name] design review". Less precise, still useful.
+
+**Note:** This skill uses gstack's browse binary (`$B`) for visual analysis.
+If you have a different browser automation tool, you can substitute it.
 
 ### Step 3: Pattern extraction
 
@@ -185,6 +216,8 @@ For each product, extract:
 
 **Eureka check:** If Layer 3 reveals a genuine insight — name it:
 "EUREKA: Every [category] product does X because they assume [Y]. But our users [evidence] — so we should do Z instead."
+
+**Deep mode: minimum 2 Eureka insights required.** If you only found 1, push harder on Layer 3 — question the most obvious assumption in the category. Standard/Quick: Eureka is optional but always welcome.
 
 ---
 
